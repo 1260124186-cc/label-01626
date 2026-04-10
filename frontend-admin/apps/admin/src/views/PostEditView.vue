@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { createPost, getPostById, updatePost } from '@blog/shared'
+import type { Category, Tag } from '@blog/shared'
+import { createPost, getCategories, getOrCreateTag, getPostById, getTags, updatePost } from '@blog/shared'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { UButton, UInput, UTextarea } from '@/components/ui'
+import { UButton, UInput, UTextarea, USelectMenu } from '@/components/ui'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,16 +12,30 @@ const postId = computed(() => (route.params.id ? String(route.params.id) : null)
 const isEdit = computed(() => !!postId.value)
 const pageTitle = computed(() => (isEdit.value ? '编辑文章' : '新建文章'))
 
+const categories = ref<Category[]>([])
+const allTags = ref<Tag[]>([])
+const newTagInput = ref('')
+const tagSuggestions = ref<Tag[]>([])
+
 const form = ref({
   title: '',
   content: '',
   excerpt: '',
+  categoryId: '',
+  tagIds: [] as string[],
 })
 
 const errors = ref<Record<string, string>>({})
 
+function loadFormData() {
+  categories.value = getCategories()
+  allTags.value = getTags()
+}
+
 // 加载文章数据（编辑模式）
 onMounted(() => {
+  loadFormData()
+
   if (isEdit.value && postId.value) {
     const post = getPostById(postId.value)
     if (post) {
@@ -28,6 +43,8 @@ onMounted(() => {
         title: post.title,
         content: post.content,
         excerpt: post.excerpt,
+        categoryId: post.category?.id || '',
+        tagIds: post.tags?.map(t => t.id) || [],
       }
     }
     else {
@@ -35,6 +52,55 @@ onMounted(() => {
     }
   }
 })
+
+const selectedTagObjects = computed(() =>
+  form.value.tagIds.map(id => allTags.value.find(t => t.id === id)).filter(Boolean) as Tag[],
+)
+
+function updateTagSuggestions() {
+  if (!newTagInput.value) {
+    tagSuggestions.value = []
+    return
+  }
+  const query = newTagInput.value.toLowerCase()
+  tagSuggestions.value = allTags.value.filter(
+    t =>
+      t.name.toLowerCase().includes(query)
+      && !form.value.tagIds.includes(t.id),
+  ).slice(0, 5)
+}
+
+function addTag(tag: Tag) {
+  if (!form.value.tagIds.includes(tag.id)) {
+    form.value.tagIds.push(tag.id)
+  }
+  newTagInput.value = ''
+  tagSuggestions.value = []
+}
+
+function addNewTag() {
+  if (!newTagInput.value.trim())
+    return
+
+  const newTag = getOrCreateTag(newTagInput.value.trim())
+  if (newTag && !form.value.tagIds.includes(newTag.id)) {
+    form.value.tagIds.push(newTag.id)
+    allTags.value = getTags()
+  }
+  newTagInput.value = ''
+  tagSuggestions.value = []
+}
+
+function removeTag(tagId: string) {
+  const index = form.value.tagIds.indexOf(tagId)
+  if (index > -1) {
+    form.value.tagIds.splice(index, 1)
+  }
+}
+
+function getCategoryById(categoryId: string): Category | undefined {
+  return categories.value.find(c => c.id === categoryId)
+}
 
 const isSaving = ref(false)
 
@@ -62,6 +128,9 @@ async function handleSave(publish = false) {
   try {
     const status = publish ? 'published' : 'draft'
 
+    const category = getCategoryById(form.value.categoryId)
+    const tags = selectedTagObjects.value
+
     if (isEdit.value && postId.value) {
       // 更新文章
       updatePost(postId.value, {
@@ -69,6 +138,8 @@ async function handleSave(publish = false) {
         content: form.value.content,
         excerpt: form.value.excerpt || `${form.value.content.slice(0, 100)}...`,
         status,
+        category,
+        tags,
       })
     }
     else {
@@ -78,6 +149,8 @@ async function handleSave(publish = false) {
         content: form.value.content,
         excerpt: form.value.excerpt,
         status,
+        category,
+        tags,
       })
     }
 
@@ -162,6 +235,73 @@ async function handleSave(publish = false) {
           placeholder="请输入文章摘要（用于列表展示，留空将自动截取内容前100字）"
           :rows="3"
         />
+      </div>
+
+      <!-- 分类和标签 -->
+      <div class="grid gap-6 md:grid-cols-2">
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <label class="mb-2 block text-sm font-medium text-slate-700"> 文章分类 </label>
+          <select
+            v-model="form.categoryId"
+            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">选择分类</option>
+            <option
+              v-for="category in categories"
+              :key="category.id"
+              :value="category.id"
+            >
+              {{ category.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <label class="mb-2 block text-sm font-medium text-slate-700"> 文章标签 </label>
+          <div class="mb-3 flex flex-wrap gap-2">
+            <span
+              v-for="tag in selectedTagObjects"
+              :key="tag.id"
+              class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
+            >
+              {{ tag.name }}
+              <button
+                class="ml-1 flex h-4 w-4 items-center justify-center rounded-full hover:bg-blue-200"
+                @click="removeTag(tag.id)"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+          <div class="relative">
+            <UInput
+              v-model="newTagInput"
+              placeholder="输入标签名称后回车添加"
+              @input="updateTagSuggestions"
+              @keyup.enter.prevent="addNewTag"
+            />
+            <transition
+              enter-active-class="transition-opacity duration-150"
+              enter-from-class="opacity-0"
+              leave-active-class="transition-opacity duration-100"
+              leave-to-class="opacity-0"
+            >
+              <div
+                v-if="tagSuggestions.length > 0"
+                class="absolute top-full left-0 right-0 z-10 mt-1 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+              >
+                <button
+                  v-for="tag in tagSuggestions"
+                  :key="tag.id"
+                  class="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  @click="addTag(tag)"
+                >
+                  {{ tag.name }}
+                </button>
+              </div>
+            </transition>
+          </div>
+        </div>
       </div>
     </div>
   </div>

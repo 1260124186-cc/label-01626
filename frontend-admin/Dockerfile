@@ -17,21 +17,18 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/blog/package.json ./apps/blog/
 COPY apps/admin/package.json ./apps/admin/
 
-# 安装所有依赖
-RUN pnpm install --no-frozen-lockfile --shamefully-hoist
-
 # 复制源代码
 COPY packages/shared ./packages/shared
 COPY apps/blog ./apps/blog
 COPY apps/admin ./apps/admin
 
-# 构建博客主站 (Nuxt)
-WORKDIR /app/apps/blog
-RUN node ../../node_modules/nuxt/bin/nuxt.mjs build
+# 安装所有依赖 - 在源码复制后确保完整链接
+RUN pnpm install --no-frozen-lockfile --shamefully-hoist
 
-# 构建管理后台 (Vite)
-WORKDIR /app/apps/admin
-RUN pnpm build
+# 构建所有应用 - 从根目录确保 monorepo 依赖正确解析
+WORKDIR /app
+RUN pnpm build:blog
+RUN pnpm build:admin
 
 # ==================== 博客 SSR 运行阶段 ====================
 FROM node:20-alpine AS blog

@@ -421,3 +421,24 @@ export function resetPosts(): void {
 export function clearPostsCache(): void {
   postsCache = null
 }
+
+/**
+ * 根据分类 slug 获取已发布的文章
+ */
+export function getPublishedPostsByCategorySlug(categorySlug: string): Post[] {
+  return getPublishedPosts().filter(
+    p => p.category && p.category.slug === categorySlug,
+  )
+}
+
+/**
+ * 根据标签 slug 获取已发布的文章
+ */
+export function getPublishedPostsByTagSlug(tagSlug: string): Post[] {
+  return getPublishedPosts().filter(
+    (p) => {
+      const postTags = p.tags || []
+      return postTags.some(t => t && t.slug === tagSlug)
+    },
+  )
+}
