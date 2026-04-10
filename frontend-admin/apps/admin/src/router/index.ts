@@ -34,6 +34,16 @@ const router = createRouter({
           name: 'post-edit',
           component: () => import('@/views/PostEditView.vue'),
         },
+        {
+          path: 'categories',
+          name: 'categories',
+          component: () => import('@/views/CategoriesView.vue'),
+        },
+        {
+          path: 'tags',
+          name: 'tags',
+          component: () => import('@/views/TagsView.vue'),
+        },
       ],
     },
   ],

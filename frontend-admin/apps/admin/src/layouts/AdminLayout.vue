@@ -16,6 +16,20 @@ const menuItems = [
     name: 'posts',
     matchNames: ['posts', 'post-create', 'post-edit'],
   },
+  {
+    path: '/categories',
+    icon: '📁',
+    label: '分类管理',
+    name: 'categories',
+    matchNames: ['categories'],
+  },
+  {
+    path: '/tags',
+    icon: '🏷️',
+    label: '标签管理',
+    name: 'tags',
+    matchNames: ['tags'],
+  },
 ]
 
 // 检查菜单项是否激活

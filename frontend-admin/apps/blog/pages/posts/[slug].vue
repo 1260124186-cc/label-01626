@@ -99,11 +99,12 @@ function formatDateSimple(dateStr: string | undefined): string {
 
             <!-- 分类和日期 -->
             <div class="mb-6 flex items-center gap-4">
-              <span
-                class="inline-flex items-center rounded-lg border border-blue-400/30 bg-blue-500/20 px-3 py-1.5 text-sm font-medium text-blue-100"
+              <NuxtLink
+                :to="`/categories/${post.category.slug}`"
+                class="inline-flex items-center rounded-lg border border-blue-400/30 bg-blue-500/20 px-3 py-1.5 text-sm font-medium text-blue-100 transition-colors hover:bg-blue-500/30"
               >
                 📁 {{ post.category.name }}
-              </span>
+              </NuxtLink>
               <span class="text-blue-200">
                 📅 {{ formatDateSimple(post.publishedAt || post.createdAt) }}
               </span>
@@ -153,13 +154,14 @@ function formatDateSimple(dateStr: string | undefined): string {
             <!-- 标签 -->
             <div class="mb-8 flex flex-wrap gap-2 border-b border-slate-200 pb-8">
               <span class="mr-2 text-slate-500">🏷️ 标签:</span>
-              <span
+              <NuxtLink
                 v-for="tag in post.tags"
                 :key="tag.id"
-                class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+                :to="`/tags/${tag.slug}`"
+                class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
               >
                 {{ tag.name }}
-              </span>
+              </NuxtLink>
             </div>
 
             <!-- Markdown 内容 -->
