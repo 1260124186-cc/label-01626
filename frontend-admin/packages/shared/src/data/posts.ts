@@ -3,7 +3,9 @@
  * 使用 localStorage 持久化存储，支持浏览器刷新后保留数据
  */
 
-import type { Post } from '../types'
+import type { Category, Post, Tag } from '../types'
+import { getCategoryById } from './categories'
+import { getTagById } from './tags'
 
 const STORAGE_KEY = 'techblog_posts'
 
@@ -293,18 +295,43 @@ export function createPost(data: {
   content: string
   excerpt?: string
   coverImage?: string
+  categoryId?: string
+  tagIds?: string[]
   status?: 'draft' | 'published'
 }): Post {
   const posts = getPostsData()
   const newId = generateId()
   const now = new Date().toISOString()
 
-  // 生成 slug
   const baseSlug = data.title
     .toLowerCase()
     .replace(/[^\w\u4E00-\u9FA5]+/g, '-')
     .replace(/^-+|-+$/g, '')
   const slug = `${baseSlug}-${newId}`
+
+  let category: Category = { id: '1', name: '未分类', slug: 'uncategorized', postCount: 0 }
+  if (data.categoryId) {
+    const foundCategory = getCategoryById(data.categoryId)
+    if (foundCategory) {
+      category = foundCategory
+    }
+  }
+  else {
+    const defaultCategory = getCategoryById('1')
+    if (defaultCategory) {
+      category = defaultCategory
+    }
+  }
+
+  const tags: Tag[] = []
+  if (data.tagIds) {
+    for (const tagId of data.tagIds) {
+      const tag = getTagById(tagId)
+      if (tag) {
+        tags.push(tag)
+      }
+    }
+  }
 
   const newPost: Post = {
     id: newId,
@@ -320,8 +347,8 @@ export function createPost(data: {
       avatar: 'https://picsum.photos/seed/admin/100/100',
       role: 'admin',
     },
-    category: { id: '1', name: '前端开发', slug: 'frontend', postCount: 10 },
-    tags: [],
+    category,
+    tags,
     viewCount: 0,
     likeCount: 0,
     status: data.status || 'draft',
@@ -339,7 +366,7 @@ export function createPost(data: {
 /**
  * 更新文章
  */
-export function updatePost(id: string, data: Partial<Post>): Post | undefined {
+export function updatePost(id: string, data: Partial<Post> & { categoryId?: string, tagIds?: string[] }): Post | undefined {
   const posts = getPostsData()
   const index = posts.findIndex(p => p.id === id)
   if (index === -1)
@@ -349,13 +376,32 @@ export function updatePost(id: string, data: Partial<Post>): Post | undefined {
   if (!oldPost)
     return undefined
 
+  const updateData: Partial<Post> = { ...data }
+
+  if (data.categoryId) {
+    const category = getCategoryById(data.categoryId)
+    if (category) {
+      updateData.category = category
+    }
+  }
+
+  if (data.tagIds) {
+    const tags: Tag[] = []
+    for (const tagId of data.tagIds) {
+      const tag = getTagById(tagId)
+      if (tag) {
+        tags.push(tag)
+      }
+    }
+    updateData.tags = tags
+  }
+
   const updatedPost: Post = {
     ...oldPost,
-    ...data,
+    ...updateData,
     updatedAt: new Date().toISOString(),
   }
 
-  // 如果状态从非发布变为发布，设置发布时间
   if (data.status === 'published' && oldPost.status !== 'published') {
     updatedPost.publishedAt = new Date().toISOString()
   }
@@ -394,6 +440,20 @@ export function publishPost(id: string): Post | undefined {
  */
 export function unpublishPost(id: string): Post | undefined {
   return updatePost(id, { status: 'draft', publishedAt: undefined })
+}
+
+/**
+ * 根据分类获取文章
+ */
+export function getPostsByCategory(categoryId: string): Post[] {
+  return getPostsData().filter(p => p.category?.id === categoryId)
+}
+
+/**
+ * 根据标签获取文章
+ */
+export function getPostsByTag(tagId: string): Post[] {
+  return getPostsData().filter(p => p.tags?.some((t: Tag) => t.id === tagId))
 }
 
 /**

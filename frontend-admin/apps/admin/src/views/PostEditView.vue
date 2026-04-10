@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { createPost, getPostById, updatePost } from '@blog/shared'
+import { createPost, getCategories, getOrCreateTag, getPostById, getTags, updatePost } from '@blog/shared'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { UButton, UInput, UTextarea } from '@/components/ui'
+import { UButton, UInput, USelectMenu, UTextarea } from '@/components/ui'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,12 +15,81 @@ const form = ref({
   title: '',
   content: '',
   excerpt: '',
+  categoryId: '',
+  tagIds: [] as string[],
 })
+
+const allCategories = ref(getCategories())
+const allTags = ref(getTags())
+const tagInput = ref('')
+const selectedTags = ref<Array<{ id: string, name: string }>>([])
 
 const errors = ref<Record<string, string>>({})
 
+function refreshData() {
+  allCategories.value = getCategories()
+  allTags.value = getTags()
+}
+
+function getTagSelectOptions() {
+  return allTags.value.map(tag => ({
+    value: tag.id,
+    label: tag.name,
+  }))
+}
+
+function getCategorySelectOptions() {
+  return allCategories.value.map(category => ({
+    value: category.id,
+    label: category.name,
+  }))
+}
+
+function handleTagInputKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ',') {
+    event.preventDefault()
+    const tagName = tagInput.value.trim()
+    if (tagName) {
+      addTagByName(tagName)
+      tagInput.value = ''
+    }
+  }
+}
+
+function addTagByName(name: string) {
+  const existing = selectedTags.value.find(t => t.name.toLowerCase() === name.toLowerCase())
+  if (existing) {
+    return
+  }
+
+  const tag = getOrCreateTag(name)
+  if (!form.value.tagIds.includes(tag.id)) {
+    form.value.tagIds.push(tag.id)
+    selectedTags.value.push({ id: tag.id, name: tag.name })
+  }
+  refreshData()
+}
+
+function removeTag(tagId: string) {
+  form.value.tagIds = form.value.tagIds.filter(id => id !== tagId)
+  selectedTags.value = selectedTags.value.filter(t => t.id !== tagId)
+}
+
+function handleTagSelect(value: string) {
+  const tagId = value
+  if (tagId && !form.value.tagIds.includes(tagId)) {
+    const tag = allTags.value.find(t => t.id === tagId)
+    if (tag) {
+      form.value.tagIds.push(tagId)
+      selectedTags.value.push({ id: tagId, name: tag.name })
+    }
+  }
+}
+
 // 加载文章数据（编辑模式）
 onMounted(() => {
+  refreshData()
+
   if (isEdit.value && postId.value) {
     const post = getPostById(postId.value)
     if (post) {
@@ -28,7 +97,10 @@ onMounted(() => {
         title: post.title,
         content: post.content,
         excerpt: post.excerpt,
+        categoryId: post.category?.id || '',
+        tagIds: post.tags?.map(t => t.id) || [],
       }
+      selectedTags.value = post.tags?.map(t => ({ id: t.id, name: t.name })) || []
     }
     else {
       router.push('/posts')
@@ -69,6 +141,8 @@ async function handleSave(publish = false) {
         content: form.value.content,
         excerpt: form.value.excerpt || `${form.value.content.slice(0, 100)}...`,
         status,
+        categoryId: form.value.categoryId,
+        tagIds: form.value.tagIds,
       })
     }
     else {
@@ -78,6 +152,8 @@ async function handleSave(publish = false) {
         content: form.value.content,
         excerpt: form.value.excerpt,
         status,
+        categoryId: form.value.categoryId,
+        tagIds: form.value.tagIds,
       })
     }
 
@@ -162,6 +238,58 @@ async function handleSave(publish = false) {
           placeholder="请输入文章摘要（用于列表展示，留空将自动截取内容前100字）"
           :rows="3"
         />
+      </div>
+
+      <!-- 分类和标签 -->
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="mb-6">
+          <label class="mb-2 block text-sm font-medium text-slate-700"> 文章分类 </label>
+          <USelectMenu
+            v-model:value="form.categoryId"
+            :items="getCategorySelectOptions()"
+            placeholder="请选择分类"
+            clearable
+          />
+        </div>
+
+        <div>
+          <label class="mb-2 block text-sm font-medium text-slate-700"> 文章标签 </label>
+          <div class="mb-3 flex flex-wrap gap-2">
+            <div
+              v-for="tag of selectedTags"
+              :key="tag.id"
+              class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
+            >
+              <span>{{ tag.name }}</span>
+              <button
+                type="button"
+                class="flex h-4 w-4 items-center justify-center rounded-full hover:bg-blue-200"
+                @click="removeTag(tag.id)"
+              >
+                ×
+              </button>
+            </div>
+            <div v-if="selectedTags.length === 0" class="text-sm text-slate-400">
+              暂无标签，输入后按回车或从下拉菜单选择添加
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <UInput
+              v-model="tagInput"
+              class="flex-1"
+              placeholder="输入标签名称，按回车确认"
+              @keydown="handleTagInputKeydown"
+            />
+            <USelectMenu
+              value=""
+              :items="getTagSelectOptions()"
+              placeholder="选择已有标签"
+              clearable
+              style="min-width: 160px"
+              @change="handleTagSelect"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>

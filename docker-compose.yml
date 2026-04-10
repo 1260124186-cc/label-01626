@@ -5,7 +5,7 @@ services:
       context: ./frontend-admin
       dockerfile: Dockerfile
       target: blog
-    container_name: techblog-ssr
+    container_name: techblog-ssr-a
     restart: unless-stopped
     environment:
       - NODE_ENV=production
