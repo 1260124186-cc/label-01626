@@ -1,0 +1,40 @@
+services:
+  # 博客主站 SSR 服务 (内部服务，不对外暴露)
+  blog:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+      target: blog
+    container_name: techblog-ssr
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NUXT_HOST=0.0.0.0
+      - NUXT_PORT=3000
+    networks:
+      - techblog-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  # Nginx 网关 (对外暴露端口 8081)
+  gateway:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+      target: gateway
+    container_name: techblog-gateway
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    depends_on:
+      - blog
+    networks:
+      - techblog-network
+
+networks:
+  techblog-network:
+    driver: bridge

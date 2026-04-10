@@ -1,0 +1,283 @@
+@import 'tailwindcss';
+
+/* 自定义 CSS 变量 */
+:root {
+  /* 主色调 */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+
+  /* 字体层级系统 */
+  --font-h1: 2.5rem; /* 40px */
+  --font-h2: 2rem; /* 32px */
+  --font-h3: 1.5rem; /* 24px */
+  --font-h4: 1.25rem; /* 20px */
+  --font-body: 1rem; /* 16px */
+  --font-small: 0.875rem; /* 14px */
+  --font-xs: 0.75rem; /* 12px */
+
+  /* 间距系统 */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 1rem; /* 16px */
+  --spacing-lg: 1.5rem; /* 24px */
+  --spacing-xl: 2rem; /* 32px */
+  --spacing-2xl: 3rem; /* 48px */
+  --spacing-3xl: 4rem; /* 64px */
+
+  /* 组件间距 */
+  --spacing-section: var(--spacing-2xl);
+  --spacing-card: var(--spacing-lg);
+  --spacing-element: var(--spacing-md);
+
+  /* 基础样式 */
+  --spacing-base: 8px;
+  --radius-base: 8px;
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-card-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* 全局样式 */
+body {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  line-height: 1.6;
+}
+
+/* 平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 选中文本样式 */
+::selection {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* 链接过渡效果 */
+a {
+  transition: color 0.2s ease;
+}
+
+/* 卡片悬停效果 */
+.card-hover {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* 按钮加载状态 */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 渐变背景 */
+.gradient-bg {
+  background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+}
+
+/* ================================
+   文章内容样式 - 亮色模式
+   ================================ */
+.prose-content {
+  line-height: 1.8;
+  font-size: 1.125rem;
+  color: #334155;
+}
+
+.prose-content p {
+  margin-bottom: 1.25em;
+  color: #334155;
+}
+
+.prose-content h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5em;
+}
+
+.prose-content h2 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+  color: #1e293b;
+}
+
+.prose-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #334155;
+}
+
+.prose-content h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  color: #475569;
+}
+
+.prose-content a {
+  color: #3b82f6;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.prose-content a:hover {
+  border-bottom-color: #3b82f6;
+}
+
+.prose-content strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.prose-content code {
+  background-color: #f1f5f9;
+  color: #e11d48;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+}
+
+.prose-content pre {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  padding: 1.25em;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  border: 1px solid #1e293b;
+}
+
+.prose-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: 0.875em;
+}
+
+.prose-content blockquote {
+  border-left: 4px solid #3b82f6;
+  background-color: #f8fafc;
+  padding: 1em 1.5em;
+  margin: 1.5em 0;
+  border-radius: 0 8px 8px 0;
+  color: #64748b;
+  font-style: italic;
+}
+
+.prose-content ul,
+.prose-content ol {
+  padding-left: 1.75em;
+  margin-bottom: 1.25em;
+}
+
+.prose-content ul {
+  list-style-type: disc;
+}
+
+.prose-content ol {
+  list-style-type: decimal;
+}
+
+.prose-content li {
+  margin-bottom: 0.5em;
+  color: #334155;
+}
+
+.prose-content li::marker {
+  color: #3b82f6;
+}
+
+.prose-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 1.5em 0;
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.prose-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  margin: 2em 0;
+}
+
+.prose-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+}
+
+.prose-content th,
+.prose-content td {
+  border: 1px solid #e2e8f0;
+  padding: 0.75em 1em;
+  text-align: left;
+  color: #334155;
+}
+
+.prose-content th {
+  background-color: #f8fafc;
+  font-weight: 600;
+}
+
+/* 骨架屏动画 */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

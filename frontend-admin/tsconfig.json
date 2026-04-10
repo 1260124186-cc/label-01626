@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "jsx": "preserve",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    // 路径别名
+    "paths": {
+      "@blog/shared": ["./packages/shared/src/index.ts"],
+      "@blog/shared/*": ["./packages/shared/src/*"]
+    },
+    // 模块解析
+    "resolveJsonModule": true,
+    // 严格类型检查
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "**/dist", "**/.nuxt", "**/.output"]
+}

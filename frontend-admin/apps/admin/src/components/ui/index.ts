@@ -1,0 +1,5 @@
+export { default as UButton } from './UButton.vue'
+export { default as UCheckbox } from './UCheckbox.vue'
+export { default as UInput } from './UInput.vue'
+export { default as USelectMenu } from './USelectMenu.vue'
+export { default as UTextarea } from './UTextarea.vue'
