@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import type { Post } from '@blog/shared'
-import { getPublishedPosts } from '@blog/shared'
+import type { Post, Category } from '@blog/shared'
+import { getPublishedPostsByCategorySlug, getCategoryBySlug } from '@blog/shared'
+
+const route = useRoute()
+const slug = route.params.slug as string
+
+// 获取分类信息
+const { data: category } = await useAsyncData<Category | undefined>(
+  `category-${slug}`,
+  () => Promise.resolve(getCategoryBySlug(slug)),
+)
+
+// 获取分类下的文章
+const { data: posts } = await useAsyncData<Post[]>(
+  `category-posts-${slug}`,
+  () => Promise.resolve(getPublishedPostsByCategorySlug(slug)),
+)
 
 // SEO
 useSeoMeta({
-  title: '首页 - TechBlog',
-  description: '欢迎来到 TechBlog，一个现代化的技术博客平台',
+  title: category.value ? `${category.value.name} - 分类归档 - TechBlog` : '分类归档 - TechBlog',
+  description: category.value
+    ? `查看 ${category.value.name} 分类下的所有技术文章`
+    : '查看 TechBlog 各分类下的技术文章',
 })
 
-// 使用 useAsyncData 确保 SSR 和客户端数据一致
-const { data: allPosts } = await useAsyncData<Post[]>('posts', () => {
-  return Promise.resolve(getPublishedPosts())
-})
-
-// 只显示前6篇文章
-const posts = computed(() => allPosts.value?.slice(0, 6) || [])
-
-// 统计数据
-const stats = computed(() => [
-  { label: '文章总数', value: allPosts.value?.length || 0 },
-  {
-    label: '总浏览量',
-    value: allPosts.value?.reduce((sum: number, p: Post) => sum + p.viewCount, 0) || 0,
-  },
-])
-
-// 格式化日期 - 使用固定格式避免 hydration mismatch
+// 格式化日期
 function formatDateSimple(dateStr: string | undefined): string {
   if (!dateStr)
     return ''
@@ -38,40 +38,41 @@ function formatDateSimple(dateStr: string | undefined): string {
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <!-- Hero 区域 -->
+  <div class="min-h-screen bg-slate-50">
+    <!-- 分类标题区域 -->
     <section
       class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white"
     >
-      <div class="absolute inset-0 opacity-20">
-        <div
-          class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')]"
-        />
-      </div>
-      <div class="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-blue-500/30 blur-3xl" />
-      <div class="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-indigo-500/30 blur-3xl" />
-
-      <div class="container relative z-10 mx-auto px-4 py-16 lg:px-8 lg:py-24">
+      <div class="container relative z-10 mx-auto px-4 py-12 lg:px-8 lg:py-16">
         <div class="mx-auto max-w-3xl text-center">
-          <h1 class="mb-6 text-4xl font-bold leading-tight lg:text-5xl">
-            TechBlog 技术博客
+          <NuxtLink
+            to="/"
+            class="mb-4 inline-flex items-center gap-2 text-sm text-blue-200 hover:text-white"
+          >
+            ← 返回首页
+          </NuxtLink>
+          <h1 v-if="category" class="mb-4 text-3xl font-bold lg:text-4xl">
+            📁 {{ category.name }}
           </h1>
-          <p class="mb-8 text-xl text-blue-100/80">
-            分享前沿技术文章，记录开发心得
+          <h1 v-else class="mb-4 text-3xl font-bold lg:text-4xl">
+            分类未找到
+          </h1>
+          <p v-if="category" class="text-lg text-blue-100/80">
+            {{ category.description || `共 ${posts?.length || 0} 篇文章` }}
+          </p>
+          <p v-else class="text-lg text-blue-100/80">
+            请检查分类 URL 是否正确
           </p>
 
-          <!-- 统计数据 -->
-          <div class="flex justify-center gap-8">
+          <div v-if="category" class="mt-6 flex justify-center gap-8">
             <div
-              v-for="stat in stats"
-              :key="stat.label"
               class="rounded-xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur-sm"
             >
               <div class="text-2xl font-bold text-white">
-                {{ stat.value }}
+                {{ posts?.length || 0 }}
               </div>
               <div class="text-sm text-blue-200/70">
-                {{ stat.label }}
+                文章数
               </div>
             </div>
           </div>
@@ -80,7 +81,7 @@ function formatDateSimple(dateStr: string | undefined): string {
     </section>
 
     <!-- 文章列表 -->
-    <section class="bg-slate-50 py-12 lg:py-16">
+    <section class="py-12 lg:py-16">
       <div class="container mx-auto px-4 lg:px-8">
         <div class="mb-8 flex items-center gap-2">
           <div class="h-6 w-1 rounded-full bg-blue-600" />
@@ -90,25 +91,19 @@ function formatDateSimple(dateStr: string | undefined): string {
         </div>
 
         <!-- 空状态 -->
-        <div v-if="posts.length === 0" class="py-16 text-center">
+        <div v-if="!posts || posts.length === 0" class="py-16 text-center">
           <div class="mx-auto mb-4 text-6xl">
             📄
           </div>
           <h3 class="mb-2 text-xl font-semibold text-slate-600">
-            暂无文章
+            该分类下暂无文章
           </h3>
           <p class="text-slate-500">
-            请在管理后台创建并发布文章
+            敬请期待更多精彩内容
           </p>
-          <NuxtLink
-            to="/admin"
-            class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-slate-600 transition-colors hover:bg-slate-100"
-          >
-            🔧 前往管理后台
-          </NuxtLink>
         </div>
 
-        <!-- 文章网格 -->
+        <!-- 文章列表 -->
         <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <NuxtLink
             v-for="post in posts"
@@ -127,23 +122,7 @@ function formatDateSimple(dateStr: string | undefined): string {
 
             <!-- 内容 -->
             <div class="p-5">
-              <div class="mb-3 flex items-center gap-2 flex-wrap">
-                <NuxtLink
-                  :to="`/categories/${post.category?.slug}`"
-                  class="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200"
-                  @click.stop
-                >
-                  📁 {{ post.category?.name }}
-                </NuxtLink>
-                <NuxtLink
-                  v-for="tag in post.tags"
-                  :key="tag.id"
-                  :to="`/tags/${tag.slug}`"
-                  class="inline-flex items-center rounded-md bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 hover:bg-purple-200"
-                  @click.stop
-                >
-                  #{{ tag.name }}
-                </NuxtLink>
+              <div class="mb-3 flex items-center gap-2">
                 <span class="text-sm text-slate-500">
                   📅 {{ formatDateSimple(post.publishedAt || post.createdAt) }}
                 </span>

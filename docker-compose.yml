@@ -5,7 +5,7 @@ services:
       context: ./frontend-admin
       dockerfile: Dockerfile
       target: blog
-    container_name: techblog-ssr
+    container_name: techblog-ssr-b
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -29,7 +29,7 @@ services:
     container_name: techblog-gateway
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "8082:8081"
     depends_on:
       - blog
     networks:
